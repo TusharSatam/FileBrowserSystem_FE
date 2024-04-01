@@ -1,5 +1,6 @@
-import React, { Children, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import styles from "./FileBrowser.module.css"
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 interface File {
     type: 'file';
@@ -21,18 +22,18 @@ interface RowData {
 type Node = File | Folder;
 const FileBrowser: React.FC = () => {
     const columns: GridColDef[] = [
-        { field: 'name', headerName: 'Name', flex: 1 },
-        { field: 'type', headerName: 'Type', width: 150 },
-        { field: 'size', headerName: 'Size', width: 150 },
+        { field: 'name', headerName: 'Name', width: 250 },
+        { field: 'type', headerName: 'Type', width: 100 },
+        { field: 'size', headerName: 'Size', width: 100 },
     ];
-    // Your JSON data
+    //  JSON data
     const jsonData: Node = {
         type: 'folder',
         name: 'root',
         children: {
             app: {
                 type: 'folder',
-                name: 'app', // Adding name property for the top-level folder
+                name: 'app',
                 children: {
                     app_file1: {
                         type: 'file',
@@ -44,11 +45,11 @@ const FileBrowser: React.FC = () => {
                     },
                     app_main: {
                         type: 'folder',
-                        name: 'app_main', // Adding name property for nested folder
+                        name: 'app_main',
                         children: {
                             src: {
                                 type: 'folder',
-                                name: 'src', // Adding name property for nested folder
+                                name: 'src',
                                 children: {
                                     src_file1: {
                                         type: 'file',
@@ -60,18 +61,18 @@ const FileBrowser: React.FC = () => {
                                     },
                                     src_main: {
                                         type: 'folder',
-                                        name: 'src_main', // Adding name property for nested folder
+                                        name: 'src_main',
                                         children: {
                                             src_main_public: {
                                                 type: 'folder',
-                                                name: 'public', // Adding name property for nested folder
+                                                name: 'public',
                                                 children: {},
                                             },
                                         },
                                     },
                                     components: {
                                         type: 'folder',
-                                        name: 'components', // Adding name property for nested folder
+                                        name: 'components',
                                         children: {
                                             components_file1: {
                                                 type: 'file',
@@ -98,15 +99,11 @@ const FileBrowser: React.FC = () => {
     };
     const [currentPath, setCurrentPath] = useState<string[]>([]);
     const [emptyFolders, setemptyFolders] = useState<string[]>([])
-    const [currentObj, setcurrentObj] = useState(null)
     const [rows, setRows] = useState<RowData[]>([])
-    let counter = 0;
     useEffect(() => {
         if (!jsonData) return;
 
         let tempObjLocation = currentPath.reduce((a, c, i) => {
-            console.log(c);
-
             return i == 0 && currentPath.length === 1 ? a + "." + c + ".children" : i === 0 ? a + "." + c : i !== (currentPath.length - 1) ? a + '.children.' + c : a + '.children.' + c + '.children';
         }, 'children');
 
@@ -119,21 +116,18 @@ const FileBrowser: React.FC = () => {
             }
         });
 
-        // if (!current || !current.children) return;
-        const tempRows: RowData[] = Object.keys(current).map(key => {
+        const tempRows: RowData[] = Object.keys(current).map((key, index) => {
             const child = current[key];
-            counter++;
+            let id = `${key}${index}`;
             if (child.children) {
                 if ((Object.values(child.children)?.length === 0)) {
-                    console.log("empty", `${key}${counter}`);
-
-                    setemptyFolders((prev) => [...prev, `${key}${counter}`])
+                    setemptyFolders((prev) => [...prev, `${key}${index}`])
                 }
             }
             if (child.type === "file") {
 
                 return {
-                    id: `${key}${counter}`,
+                    id: id,
                     name: key,
                     type: child.type,
                     size: child?.size || '',
@@ -141,7 +135,7 @@ const FileBrowser: React.FC = () => {
             }
             else {
                 return {
-                    id: `${key}${counter}`,
+                    id: id,
                     name: (Object.values(child.children)?.length === 0) ? child.name + " (Empty) " : child.name,
                     type: child.type,
                     size: '-',
@@ -150,18 +144,17 @@ const FileBrowser: React.FC = () => {
         });
 
         setRows(tempRows);
-        setcurrentObj(current)
 
     }, [currentPath])
     const handleBreadCrumb = (index: number) => {
         setCurrentPath((prev) => prev?.slice(0, index + 1))
     }
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: '100vh', width: '100%', gap: "2rem", padding: "1rem 2rem" }}>
+        <div className={styles.fileBrowserWrap}>
             <Breadcrumbs separator="›" aria-label="breadcrumb">
-                <button onClick={() => setCurrentPath([])} style={{ backgroundColor: "transparent", border: "none", color: "blue", fontSize: "2rem" }}>root</button>
+                <button onClick={() => setCurrentPath([])} className={styles.breadcrumbButton}>root</button>
                 {currentPath && currentPath?.map((item, i) => (
-                    <button onClick={() => handleBreadCrumb(i)} style={{ backgroundColor: "transparent", border: "none", color: "blue", fontSize: "2rem" }}>{item}</button>
+                    <button onClick={() => handleBreadCrumb(i)} className={styles.breadcrumbButton}>{item}</button>
                 ))}
             </Breadcrumbs>
 
@@ -169,8 +162,8 @@ const FileBrowser: React.FC = () => {
                 rows={rows}
                 columns={columns}
                 checkboxSelection={false}
+                className={styles.dataGridContainer}
                 onRowClick={(row) => {
-
                     if (row.row.type === 'folder' && !emptyFolders.includes(row.row.id)) {
                         console.log(row);
                         setCurrentPath((prev) => [...prev, row.row.name])
